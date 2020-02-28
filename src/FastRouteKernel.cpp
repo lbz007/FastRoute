@@ -77,6 +77,7 @@ int FastRouteKernel::run() {
         
         _fastRoute.setVerbose(_verbose);
         _fastRoute.setOverflowIterations(_overflowIterations);
+        _fastRoute.setWriteCongestLog(_writeCongestLog);
         
         std::cout << " > Initializing grid...\n";
         initGrid();
@@ -168,6 +169,7 @@ void FastRouteKernel::startFastRoute() {
         
         _fastRoute.setVerbose(_verbose);
         _fastRoute.setOverflowIterations(_overflowIterations);
+        _fastRoute.setWriteCongestLog(_writeCongestLog);
         
         std::cout << " > Params:\n";
         std::cout << " > ---- Min routing layer: " << _minRoutingLayer << "\n";

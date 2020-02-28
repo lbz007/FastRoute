@@ -47,6 +47,7 @@ sta::define_cmd_args "fastroute" {[-output_file out_file] \
                                            [-alpha alpha] \
                                            [-verbose verbose] \
                                            [-overflow_iterations iterations] \
+                                           [-write_congestion_log] \
 }
 
 proc fastroute { args } {
@@ -54,7 +55,7 @@ proc fastroute { args } {
     keys {-output_file -capacity_adjustment -min_routing_layer -max_routing_layer \
           -pitches_in_tile -alpha -verbose -layers_adjustments \
           -regions_adjustments -nets_alphas_priorities -overflow_iterations} \
-    flags {-unidirectional_routing -clock_net_routing}
+    flags {-unidirectional_routing -clock_net_routing -write_congestion_log}
 
   if { [info exists keys(-output_file)] } {
     set out_file $keys(-output_file)
@@ -154,6 +155,10 @@ proc fastroute { args } {
   } else {
     FastRoute::set_clock_net_routing false
     FastRoute::set_pdrev false
+  }
+
+  if { [info exists flags(-write_congestion_log)] } {
+    FastRoute::write_congest_log
   }
 
   FastRoute::start_fastroute

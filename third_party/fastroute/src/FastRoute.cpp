@@ -40,6 +40,7 @@
 #include <math.h>
 #include <time.h>
 #include <algorithm>
+#include <vector>
 #include "DataType.h"
 #include "flute.h"
 #include "pdrev.h"
@@ -52,6 +53,8 @@
 #include "route.h"
 #include "maze3D.h"
 #include <iostream>
+#include <cstdio>
+#include <tuple>
 
 namespace FastRoute {
 
@@ -491,6 +494,105 @@ std::vector<NET> FT::getResults() {
         return netsOut;
 }
 
+void FT::reportOverflowRegions() {
+        int H_overflow = 0;
+        int V_overflow = 0;
+        int grid = 0;
+        int max_H_overflow = 0;
+        int max_V_overflow = 0;
+        int numedges = 0;
+        int overflow = 0;
+        int total_cap = 0;
+        int total_usage = 0;
+        int xreal, yreal;
+        std::vector<std::tuple<int, int, int>> horizontalEdges;
+        std::vector<std::tuple<int, int, int>> verticalEdges;
+        
+        FILE *overflowReport;
+        
+        overflowReport = fopen("./overflowReport.log", "w");
+        
+        fprintf(overflowReport, "Total overflow %d\n", totalOverflow);
+        
+        for (int i = 0; i < yGrid; i++) {
+                for (int j = 0; j < xGrid - 1; j++) {
+                        grid = i * (xGrid - 1) + j;
+                        total_usage += h_edges[grid].usage;
+                        overflow = h_edges[grid].usage - h_edges[grid].cap;
+                        total_cap += h_edges[grid].cap;
+                        if (overflow > 0) {
+                                xreal = wTile * (j + 0.5) + xcorner;
+                                yreal = hTile * (i + 0.5) + ycorner;
+                                horizontalEdges.push_back(std::make_tuple(xreal, yreal, overflow));
+                                H_overflow += overflow;
+                                numedges++;
+                        }
+                }
+        }
+        
+        fprintf(overflowReport, "Horizontal congestion\n");
+        
+        int firstX = std::get<0>(horizontalEdges[0]);
+        int regionHOverflow = std::get<2>(horizontalEdges[0]);
+        int hCounter = 0;
+        for (int i = 0; i < horizontalEdges.size() - 1; i++) {
+                if (std::get<1>(horizontalEdges[i]) != std::get<1>(horizontalEdges[i+1])) {
+                        fprintf(overflowReport, "    Region %d: From (%d, %d) to (%d, %d), overflow: %d\n",
+                                hCounter, firstX, std::get<1>(horizontalEdges[i]),
+                                std::get<0>(horizontalEdges[i]) + wTile, std::get<1>(horizontalEdges[i]) + hTile,
+                                regionHOverflow);
+                        firstX = std::get<0>(horizontalEdges[i+1]);
+                        max_H_overflow = std::max(max_H_overflow, regionHOverflow);
+                        regionHOverflow = std::get<2>(horizontalEdges[i+1]);
+                        hCounter++;
+                } else {
+                        regionHOverflow += std::get<2>(horizontalEdges[i]);
+                }
+        }
+        
+        fprintf(overflowReport, "   Max horizontal overflow: %d\n", max_H_overflow);
+         
+        for (int i = 0; i < yGrid - 1; i++) {
+                for (int j = 0; j < xGrid; j++) {
+                        grid = i * xGrid + j;
+                        total_usage += v_edges[grid].usage;
+                        overflow = v_edges[grid].usage - v_edges[grid].cap;
+                        total_cap += v_edges[grid].cap;
+                        if (overflow > 0) {
+                                xreal = wTile * (j + 0.5) + xcorner;
+                                yreal = hTile * (i + 0.5) + ycorner;
+                                verticalEdges.push_back(std::make_tuple(xreal, yreal, overflow));
+                                V_overflow += overflow;
+                                numedges++;
+                        }
+                }
+        }
+        
+        fprintf(overflowReport, "\nVertical congestion\n");
+
+        int firstY = std::get<1>(verticalEdges[0]);
+        int regionVOverflow = std::get<2>(verticalEdges[0]);
+        int vCounter = 0;
+        for (int i = 0; i < verticalEdges.size()-1; i++) {
+                if (std::get<0>(verticalEdges[i]) != std::get<0>(verticalEdges[i+1])) {
+                        fprintf(overflowReport, "    Region %d: From (%d, %d) to (%d, %d), overflow: %d\n",
+                                i, std::get<0>(verticalEdges[i]), firstY,
+                                std::get<0>(verticalEdges[i]) + wTile, std::get<1>(verticalEdges[i]) + hTile,
+                                regionVOverflow);
+                        firstY = std::get<1>(verticalEdges[i+1]);
+                        max_V_overflow = std::max(max_V_overflow, regionVOverflow);
+                        regionVOverflow = std::get<2>(verticalEdges[i+1]);
+                        vCounter++;
+                } else {
+                        regionVOverflow += std::get<2>(verticalEdges[i]);
+                }
+        }
+        
+        fprintf(overflowReport, "   Max vertical overflow: %d\n", max_V_overflow);
+        
+        fclose(overflowReport);
+}
+
 int FT::run(std::vector<NET> &result) {
         //    char benchFile[FILESTRLEN];
         char routingFile[STRINGLEN];
@@ -818,6 +920,8 @@ int FT::run(std::vector<NET> &result) {
         
         if (totalOverflow > 0) {
                 printf("[ERROR] FastRoute cannot handle very congested design\n");
+                if (writeCongestLog)
+                        reportOverflowRegions();
                 std::exit(2);
         }
 
@@ -916,8 +1020,11 @@ void FT::setVerbose(int v){
         verbose = v;
 }
 
-void FT::setOverflowIterations(int iterations){
+void FT::setOverflowIterations(int iterations) {
         overflowIterations = iterations;
+}
+void FT::setWriteCongestLog(bool writeLog) {
+        writeCongestLog = writeLog;
 }
 
 }  // namespace FastRoute

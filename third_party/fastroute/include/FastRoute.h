@@ -90,11 +90,13 @@ class FT {
 
         int getEdgeCapacity(long x1, long y1, int l1, long x2, long y2, int l2);
         std::map<std::string, std::vector<PIN>> getNets();
+        void reportOverflowRegions();
         void setMaxNetDegree(int);
         void usePdRev();
         void setAlpha(float a);
         void setVerbose(int v);
         void setOverflowIterations(int iterations);
+        void setWriteCongestLog(bool writeLog);
 };
 }  // namespace FastRoute
 #endif /* __FASTROUTE_API__ */

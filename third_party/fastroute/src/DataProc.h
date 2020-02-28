@@ -51,6 +51,7 @@ extern bool pdRev;
 extern float alpha;
 extern int verbose;
 extern int overflowIterations;
+extern bool writeCongestLog;
 
 extern int enlarge, costheight, ripup_threshold;
 extern int MaxDegree;

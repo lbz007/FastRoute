@@ -113,6 +113,10 @@ void set_overflow_iterations(int iterations) {
         fastRouteKernel->setOverflowIterations(iterations);
 }
 
+void write_congest_log() {
+        fastRouteKernel->writeCongestionLog();
+}
+
 void start_fastroute() {
         fastRouteKernel->startFastRoute();
 }

@@ -59,6 +59,7 @@ bool pdRev;
 float alpha;
 int verbose;
 int overflowIterations;
+bool writeCongestLog;
 
 Bool **HV;
 Bool **hyperV;

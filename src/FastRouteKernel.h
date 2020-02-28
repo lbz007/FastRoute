@@ -103,6 +103,9 @@ private:
         int _verbose = 0;
         std::map<std::string, float> _netsAlpha;
         
+        // Other flags
+        bool _writeCongestLog = false;
+        
         // main functions
         void initGrid();
         void initRoutingLayers();
@@ -168,6 +171,10 @@ public:
         
         void setOverflowIterations(int iterations) {
                 _overflowIterations = iterations;
+        }
+        
+        void writeCongestionLog() {
+                _writeCongestLog = true;
         }
         
         void printGrid();

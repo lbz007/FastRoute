@@ -92,6 +92,7 @@ class FT {
         void setAlpha(float a);
         void setVerbose(int v);
         void setOverflowIterations(int iterations);
+        void setWriteCongestLog(bool writeLog);
 };
 }  // namespace FastRoute
 #endif /* __FASTROUTE_API__ */
