@@ -527,15 +527,40 @@ void DBWrapper::initObstacles() {
         
         int macrosCnt = 0;
         int obstaclesCnt = 0;
+        std::set<int> termLayers;
         for (instIter = insts.begin(); instIter != insts.end(); instIter++) {
                 int pX, pY;
                 bool isMacro = false;
+
+                termLayers.clear();
 
                 odb::dbInst* currInst = *instIter;
                 odb::dbMaster* master = currInst->getMaster();
 
                 if (master->getType().isPad()) {
-                        continue;
+                        odb::dbSet<odb::dbMTerm> mTerms = master->getMTerms();
+                        odb::dbSet<odb::dbMTerm>::iterator termIter;
+                        for (termIter = mTerms.begin(); termIter != mTerms.end(); termIter++) {
+                                odb::dbMTerm* mTerm = *termIter;
+                                odb::dbSet<odb::dbMPin> mTermPins = mTerm->getMPins();
+                                odb::dbSet<odb::dbMPin>::iterator pinIter;
+
+                                for (pinIter = mTermPins.begin(); pinIter != mTermPins.end(); pinIter++) {
+                                        odb::dbMPin* currMTermPin = *pinIter;
+                                        odb::dbSet<odb::dbBox> geometries = currMTermPin->getGeometry();
+                                        odb::dbSet<odb::dbBox>::iterator geomIter;
+
+                                        for (geomIter = geometries.begin(); geomIter != geometries.end(); geomIter++) {
+                                                odb::dbBox* box = *geomIter;
+                                                odb::dbTechLayer* techLayer = box->getTechLayer();
+                                                if (techLayer->getType().getValue() != odb::dbTechLayerType::ROUTING) {
+                                                        continue;
+                                                }
+
+                                                termLayers.insert(techLayer->getRoutingLevel());
+                                        }
+                                }
+                        }
                 }
                 
                 currInst->getOrigin(pX, pY);
@@ -564,13 +589,12 @@ void DBWrapper::initObstacles() {
                         if (!dieArea.inside(obstacleBox)) {
                                 std::cout << "[WARNING] Found obstacle outside die area in instance " << currInst->getConstName() << "\n";
                         }
-                        _grid->addObstacle(layer, obstacleBox);
-                        obstaclesCnt++;
+                        if (termLayers.find(layer) == termLayers.end()) { // if obstacle layer is teh same as one terminal layer, skip (only for PADs)
+                                _grid->addObstacle(layer, obstacleBox);
+                                obstaclesCnt++;
+                        }
                 }
 
-                // if (isMacro) { // Get cut layer obstacles
-                //         ;
-                // }
 
                 odb::dbSet<odb::dbMTerm> mTerms = master->getMTerms();
                 odb::dbSet<odb::dbMTerm>::iterator termIter;
